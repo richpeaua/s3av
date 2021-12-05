@@ -6,7 +6,7 @@ ifdef ENV
 		include ${TARGET_ENV_FILE}
 		export
 	else
-$(warning The env file `${TARGET_ENV_FILE}` does not exist.)
+$(warning WARNING!! The env file `${TARGET_ENV_FILE}` does not exist)
 	endif
 else
 # if ENV not provided then default to plain '.env'
@@ -14,12 +14,11 @@ else
 		include .env
 		export
 	else
-$(warning Missing a `.env` file, see `.env.example` OR set `ENV` variable for specific `.env.ENV` file, if exists, e.g. `make env-verify ENV=sandbox`)
+$(warning WARNING!! Missing a `.env` file, see `.env.example` OR set `ENV` variable for specific `.env.ENV` file, if exists, e.g. `make env-verify ENV=sandbox`)
 	endif
 endif
 
 export AWS_PROFILE
-export AWS_REGION
 export AWS_DEFAULT_REGION := ${AWS_REGION}
 
 IMAGE_URL := ${ECR_REPO}${ECR_IMAGE_PATH}
@@ -29,7 +28,7 @@ IMAGE := ${IMAGE_URL}:${IMAGE_TAG}
 IMAGE_LATEST := ${IMAGE_URL}:latest
 
 TEST_EVENTS_DIR := tests/events
-EVENT ?= s3_put_1.json
+EVENT ?= event_1.json
 TEST_EVENT_DATA := $(shell cat ${TEST_EVENTS_DIR}/${EVENT})
 
 .PHONY: help
@@ -46,7 +45,6 @@ echo: ## Print included vars from `.env` OR `.env.ENV` files
 	@echo "DEPLOY_ENV = ${DEPLOY_ENV}"
 	@echo "AWS_PROFILE = ${AWS_PROFILE}"
 	@echo "AWS_REGION = ${AWS_REGION}"
-	@echo "AWS_DEFAULT_REGION = ${AWS_DEFAULT_REGION}"
 	@echo "ECR_REPO = ${ECR_REPO}"
 	@echo "APPCONFIG_EXT_ARN = ${APPCONFIG_EXT_ARN}"
 
@@ -65,7 +63,7 @@ lock:
 	pipenv lock -r > requirements.txt
 
 .PHONY: build
-build: env-verify ecr-login ## Build docker image
+build: env-verify lock ecr-login ## Build docker image
 	@stat build_resources || mkdir build_resources
 	@stat build_resources/layer.zip || curl "$(shell aws --profile ${AWS_PROFILE} --region ${AWS_DEFAULT_REGION} lambda get-layer-version-by-arn --arn ${APPCONFIG_EXT_ARN} --query 'Content.Location' --output text)" --output build_resources/layer.zip
 	docker build --no-cache --rm --force-rm -t ${IMAGE} .
