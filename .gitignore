@@ -1,0 +1,19 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+
+# Editors / IDEs
+.history
+.DS_Store
+.idea
+
+# Terraform files
+.terraform
+*.tfvars
+*.plan
+
+# Local env files
+build_resources
+.env.*
+.env
+!.env.example
