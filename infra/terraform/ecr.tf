@@ -6,7 +6,7 @@ locals {
 # Dispatcher ECR Repository
 #====================================================
 module "ecr_dispatcher" {
-  source        = "modules/ecr"
+  source        = "./modules/ecr"
   is_enabled    = var.lambda_dispatcher_enabled
   software_name = var.app_name
   name_prefix   = "${var.app_env}-${var.app_name}"
@@ -25,7 +25,7 @@ module "ecr_dispatcher" {
 # Scanner ECR Repository
 #====================================================
 module "ecr_scanner" {
-  source        = "module/ecr"
+  source        = "./modules/ecr"
   is_enabled    = var.lambda_scanner_enabled
   software_name = var.app_name
   name_prefix   = "${var.app_env}-${var.app_name}"
@@ -44,7 +44,7 @@ module "ecr_scanner" {
 #====================================================
 module "ecr_notifier" {
   # TODO: Use git link
-  source        = "module/ecr"
+  source        = "./modules/ecr"
   is_enabled    = var.lambda_notifier_enabled
   software_name = "${var.app_name}-notifier"
   name_prefix   = "${var.app_env}-${var.app_name}"

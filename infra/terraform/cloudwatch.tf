@@ -3,7 +3,7 @@
 #====================================================
 
 module "cloudtrail_log_subscription" {
-  source = "../cloudwatch-subscription"
+  source = "./modules/cloudwatch-subscription"
 
 
   is_enabled = var.lambda_dispatcher_enabled

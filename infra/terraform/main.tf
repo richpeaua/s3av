@@ -10,8 +10,8 @@ provider "aws" {
 
 terraform {
   backend "s3" {
-    bucket = var.tf_state_bucket
-    key    = var.tf_state_key
-    region = var.aws_region
+    bucket = "peaua-master-tf-state-bucket"
+    key    = "live"
+    region = "us-west-1"
   }
 }

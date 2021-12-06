@@ -2,16 +2,6 @@
 # General
 #====================================================
 
-variable "tf_state_bucket" {
-  description = "AWS S3 bucket where the TF state will be saved"
-  type        = string
-}
-
-variable "tf_state_key" {
-  description = "Name of tf state file stored in tf_state_bucket"
-  type        = string
-}
-
 variable "lambda_scanner_enabled" {
     description = "Whether to deploy scanner lambda"
     type = bool
@@ -143,8 +133,21 @@ variable "update_clamav_db_schedule_expression" {
 }
 
 variable "appconfig_hosted_config" {
-  description = "description"
-  type        = string
-  default     = ""
-  description = "description"
+  description = "Whether to enabled hosted config (as opposed to s3 or param store hosted)"
+  type        = bool
+  default     = true
 }
+
+variable "appconfig_hosted_config_content_type" {
+  description = "Format of the config"
+  type        = string
+  default     = "application/json"
+}
+
+variable "appconfig_hosted_config_content_path" {
+  description = "Path to the json config file"
+  type        = string
+  default     = "../../services/service_config.json"
+}
+
+

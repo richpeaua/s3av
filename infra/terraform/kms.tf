@@ -1,5 +1,5 @@
 module "kms" {
-  source     = "modules/kms"
+  source     = "./modules/kms"
   is_enabled = var.lambda_scanner_enabled
 
   description = "S3 Virus scanner KMS key"

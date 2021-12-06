@@ -36,7 +36,7 @@ module "lambda_dispatcher" {
 
   # Container image settings
   create_package = false
-  image_uri      = "${module.ecr_dispatcher.repository_url}:${var.image_tag_dispatcher}"
+  image_uri      = "${module.ecr_dispatcher.repository_url}:${var.lambda_dispatcher_image_tag}"
   package_type   = "Image"
 
 
@@ -90,18 +90,13 @@ module "lambda_scanner" {
 
   # Container image settings
   create_package = false
-  image_uri      = "${module.ecr_scanner.repository_url}:${var.image_tag_scanner}"
+  image_uri      = "${module.ecr_scanner.repository_url}:${var.lambda_scanner_image_tag}"
   package_type   = "Image"
-
 
   # Creating Lambda inside VPC
   vpc_subnet_ids         = module.vpc.private_subnets
   vpc_security_group_ids = [aws_security_group.lambda_scanner[0].id]
   attach_network_policy  = true
-
-  # EFS
-  file_system_arn              = aws_efs_access_point.lambda[0].arn
-  file_system_local_mount_path = "/mnt/data"
 
   # Additional policies
   attach_policy_jsons    = true
@@ -129,12 +124,12 @@ module "lambda_scanner" {
   environment_variables = {
     AWS_ACCOUNT   = var.aws_account_id
     APPCONFIG_APP = "${var.app_env}-${var.app_name}-appconfig"
-    APPCONFIG_ENV = var.appconfig_env
+    APPCONFIG_ENV = var.app_env
   }
 
   tags = var.tags
 
-  depends_on = [aws_efs_mount_target.this, module.ecr_scanner]
+  depends_on = [module.ecr_scanner]
 }
 
 
@@ -155,7 +150,7 @@ module "lambda_notifier" {
 
   # Container image settings
   create_package = false
-  image_uri      = "${module.ecr_notifier.repository_url}:${var.image_tag_notifier}"
+  image_uri      = "${module.ecr_notifier.repository_url}:${var.lambda_notifier_image_tag}"
   package_type   = "Image"
 
 
@@ -183,7 +178,7 @@ module "lambda_notifier" {
   environment_variables = {
     ASM_SECRET_NAME = local.notifier_ams_secret_name
     APPCONFIG_APP = "${var.app_env}-${var.app_name}-appconfig"
-    APPCONFIG_ENV = var.appconfig_env
+    APPCONFIG_ENV = var.app_env
   }
 
   tags = var.tags

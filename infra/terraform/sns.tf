@@ -26,10 +26,10 @@ resource "aws_sns_topic" "notification" {
   # kms_master_key_id = module.kms.key_arn
 }
 
-resource "aws_sns_topic_subscription" "notify_sns_to_notify_lambda" {
+resource "aws_sns_topic_subscription" "notifier_sns_to_notify_lambda" {
   count = var.lambda_notifier_enabled ? 1 : 0
 
   topic_arn = aws_sns_topic.notification[0].arn
   protocol  = "lambda"
-  endpoint  = module.lambda_notify.lambda_function_arn
+  endpoint  = module.lambda_notifier.lambda_function_arn
 }
