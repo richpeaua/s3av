@@ -24,10 +24,10 @@ class SNSConfig(object):
 
 def get_sns_configs():
     app_config = get_appconfig()
-    notify_config = app_config['sns_filters']
+    notify_config = app_config['results_sns_routes']
     for sns_raw_config in notify_config:
         yield SNSConfig(sns_raw_config)
 
 
 def get_sns_topics(results):
-    return [i.sns_config['sns_arn'] for i in get_sns_configs() if i.is_match(results)]
+    return [i.sns_config['dest_sns_arn'] for i in get_sns_configs() if i.is_match(results)]

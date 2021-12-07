@@ -2,16 +2,6 @@
 # Dispatcher Lambda
 #====================================================
 
-data "aws_iam_policy_document" "lambda_dispatcher_to_sns" {
-    count = var.lambda_dispatcher_enabled ? 1 : 0
-    statement {
-        sid     = "AllowSNSPublish"
-        effect  = "Allow"
-        actions = ["sns:Publish"]
-        resources = [aws_sns_topic.scan[0].arn]
-    }
-}
-
 data "aws_iam_policy_document" "lambda_dispatcher_appconfig" {
     count = var.lambda_dispatcher_enabled ? 1 : 0
     statement {
@@ -30,7 +20,7 @@ data "aws_iam_policy_document" "lambda_dispatcher_appconfig" {
 # Scanner Lambda
 #====================================================
 data "aws_iam_policy_document" "lambda_scanner_s3" {
-    count = var.lambda_scanner_enabled ? 1 : 0
+    count = var.scanner_enabled ? 1 : 0
     statement {
         sid     = "AllowS3ReadAccess"
         effect  = "Allow"
@@ -42,12 +32,12 @@ data "aws_iam_policy_document" "lambda_scanner_s3" {
             "s3:GetObjectTagging",
             "s3:PutObjectTagging"
         ]
-        resources = ["arn:aws:s3:::*"]
+        resources = [module.s3_bucket.s3_bucket_arn]
     }
 }
 
 data "aws_iam_policy_document" "lambda_scanner_to_notifier_sns" {
-    count = var.lambda_notifier_enabled ? 1 : 0
+    count = var.notifier_enabled ? 1 : 0
     statement {
         sid     = "AllowSNSPublish"
         effect  = "Allow"
@@ -59,18 +49,18 @@ data "aws_iam_policy_document" "lambda_scanner_to_notifier_sns" {
 }
 
 data "aws_iam_policy_document" "lambda_scanner_cross_account_assume_role" {
-    count = var.lambda_scanner_enabled ? 1 : 0
+    count = var.scanner_enabled ? 1 : 0
     statement {
         sid     = "AllowAssumeRole"
         effect  = "Allow"
         actions = [ "sts:AssumeRole"]
-        resources = ["arn:aws:iam::*:role/s3-virus-scanner"]
+        resources = ["arn:aws:iam::*:role/s3av-cross-account-role"]
     }
 }
 
 
 data "aws_iam_policy_document" "lambda_scanner_appconfig" {
-    count = var.lambda_scanner_enabled ? 1 : 0
+    count = var.scanner_enabled ? 1 : 0
     statement {
         sid       = "AllowAppConfigGetConfig"
         effect    = "Allow"
@@ -88,17 +78,17 @@ data "aws_iam_policy_document" "lambda_scanner_appconfig" {
 #====================================================
 
 data "aws_iam_policy_document" "lambda_notifier_to_asm" {
-    count = var.lambda_notifier_enabled ? 1 : 0
+    count = var.notifier_enabled ? 1 : 0
     statement {
         sid       = "AllowASMGetSecretValue"
         effect    = "Allow"
         actions   = ["secretsmanager:GetSecretValue"]
-        resources = [aws_secretsmanager_secret.this[0].arn]
+        resources = [aws_secretsmanager_secret.s3av[0].arn]
     }
 }
 
 data "aws_iam_policy_document" "lambda_notifier_to_kms" {
-    count = var.lambda_notifier_enabled ? 1 : 0
+    count = var.notifier_enabled ? 1 : 0
     statement {
         sid     = "AllowKMSDecrypt"
         effect  = "Allow"
@@ -108,7 +98,7 @@ data "aws_iam_policy_document" "lambda_notifier_to_kms" {
 }
 
 data "aws_iam_policy_document" "lambda_notifier_appconfig" {
-  count = var.lambda_notifier_enabled ? 1 : 0
+  count = var.notifier_enabled ? 1 : 0
   statement {
     sid    = "AllowAppConfigGetConfig"
     effect = "Allow"

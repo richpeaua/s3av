@@ -1,10 +1,8 @@
 ### THIS IS AN EXAMPLE .tfvars FILE!
 
 # AWS vars
-aws_account_id  = ""
-aws_region      = ""
-tf_state_bucket = ""
-tf_state_key    = ""
+aws_account_id  = "12345678987"
+aws_region      = "us-east-1"
 # Common Vars
 env      = "dev"
 tags     = {
@@ -13,17 +11,20 @@ tags     = {
     App              = "s3av"
 }
 # Lambda Vars
-lambda_scanner_enabled      = true
-lambda_notifier_enabled     = true
-lambda_dispatcher_enabled   = true
-lambda_scanner_image_tag    = 0.01
-lambda_dispatcher_image_tag = 0.01
-lambda_notifier_image_tag   = 0.01
+scanner_enabled            = true
+scanner_version_file_path  = "../../services/scanner/version.json"
+notifier_enabled           = true
+notifier_version_file_path = "../../services/notifier/version.json"
+# Appconfig Vars
+appconfig_hosted_config_content_path = "../../services/service_config.json"
+appconfig_hosted_config_env = {
+    dev = {
+        name        = "Dev"
+        description = "Dev s3av service configs"
+    }
+}
 # VPC Vars
 vpc_cidr               = "10.100.0.0/20"
 vpc_azs                = ["us-east-1a", "us-east-1b", "us-east-1c"]
 vpc_private_subnets    = ["10.100.0.0/22", "10.100.4.0/22", "10.100.8.0/22"]
 vpc_public_subnets     = ["10.100.12.0/26", "10.100.12.0/26", "10.100.12.0/26"]
-# Cloud Trail Vars
-cloudtrail_log_group_name     = ""
-cloudtrail_log_filter_pattern = ""

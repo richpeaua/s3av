@@ -22,7 +22,7 @@ class Config(object):
     PATH_CLAMAV = environ.get('PATH_CLAMAV', '/var/lib/clamav')
     VS_USER = environ.get('VS_USER', 'root')
     VS_PATH_FRESHCLAM_CONF = environ.get('VS_PATH_FRESHCLAM_CONF', os.path.join(PATH_CLAMAV, 'freshclam.conf'))
-    VS_PATH_DB = environ.get('VS_PATH_DB', os.path.join(PATH_CLAMAV, 'clamav_db'))
+    VS_PATH_DB = environ.get('VS_PATH_DB', os.path.join("/tmp", 'clamav_db'))
 
     # S3 Object Tag Keys
     VS_S3_OBJ_TAG_STATUS = 'S3AVScanStatus'

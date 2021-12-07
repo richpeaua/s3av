@@ -2,73 +2,18 @@ locals {
   # These locals allow for the invdividual deployment of the lambda functions 
   # - e.g if you only need the scanner and not any of the other.
   # without these locals, the TF apply will fail if not all functions are enabled
-  dispatcher_sns_policy       = length(data.aws_iam_policy_document.lambda_dispatcher_to_sns) > 0 ? data.aws_iam_policy_document.lambda_dispatcher_to_sns[0].json : ""
-  dispatcher_appconfig_policy = length(data.aws_iam_policy_document.lambda_dispatcher_appconfig) > 0 ? data.aws_iam_policy_document.lambda_dispatcher_appconfig[0].json : ""
-  dispatcher_sg_policy        = length(aws_security_group.lambda_dispatcher) > 0 ? aws_security_group.lambda_dispatcher[0].id : ""
-
+  scanner_img_version                  = lookup(jsondecode(file(var.scanner_version_file_path)), "version", "0.01")
   scanner_s3_policy                    = length(data.aws_iam_policy_document.lambda_scanner_s3) > 0 ? data.aws_iam_policy_document.lambda_scanner_s3[0].json : ""
-  scanner_notifier_sns_policy            = length(data.aws_iam_policy_document.lambda_scanner_to_notifier_sns) > 0 ? data.aws_iam_policy_document.lambda_scanner_to_notifier_sns[0].json : ""
+  scanner_notifier_sns_policy          = length(data.aws_iam_policy_document.lambda_scanner_to_notifier_sns) > 0 ? data.aws_iam_policy_document.lambda_scanner_to_notifier_sns[0].json : ""
   scanner_x_account_assume_role_policy = length(data.aws_iam_policy_document.lambda_scanner_cross_account_assume_role) > 0 ? data.aws_iam_policy_document.lambda_scanner_cross_account_assume_role[0].json : ""
   scanner_appconfig_policy             = length(data.aws_iam_policy_document.lambda_scanner_appconfig) > 0 ? data.aws_iam_policy_document.lambda_scanner_appconfig[0].json : ""
 
+  notifier_img_version      = lookup(jsondecode(file(var.notifier_version_file_path)), "version", "0.01")
   notifier_asm_policy       = length(data.aws_iam_policy_document.lambda_notifier_to_asm) > 0 ? data.aws_iam_policy_document.lambda_notifier_to_asm[0].json : ""
   notifier_kms_policy       = length(data.aws_iam_policy_document.lambda_notifier_to_kms) > 0 ? data.aws_iam_policy_document.lambda_notifier_to_kms[0].json : ""
   notifier_appconfig_policy = length(data.aws_iam_policy_document.lambda_notifier_appconfig) > 0 ? data.aws_iam_policy_document.lambda_notifier_appconfig[0].json : ""
   notifier_sns_topic_arn    = length(aws_sns_topic.notification) > 0 ? aws_sns_topic.notification[0].arn : ""
-  notifier_ams_secret_name  = length(aws_secretsmanager_secret.this) > 0 ? aws_secretsmanager_secret.this[0].name : ""
-}
-
-
-#====================================================
-# Dispatcher Lambda
-#====================================================
-module "lambda_dispatcher" {
-  source = "terraform-aws-modules/lambda/aws"
-  # version = "1.28.0"
-
-  create = var.lambda_dispatcher_enabled
-
-  function_name = "${var.app_env}-${var.app_name}-dispatcher"
-  description   = "AWS S3 Virus Scanner - Event Dispatcher"
-
-  timeout                                 = 10
-  create_current_version_allowed_triggers = false
-
-  # Container image settings
-  create_package = false
-  image_uri      = "${module.ecr_dispatcher.repository_url}:${var.lambda_dispatcher_image_tag}"
-  package_type   = "Image"
-
-
-  # Creating Lambda inside VPC
-  vpc_subnet_ids         = module.vpc.private_subnets
-  vpc_security_group_ids = [local.dispatcher_sg_policy]
-  attach_network_policy  = true
-
-  allowed_triggers = {
-    CloudTrailLogs = {
-      service    = "logs"
-      source_arn = "arn:aws:logs:${var.aws_region}:${var.aws_account_id}:log-group:${var.cloudtrail_log_group_name}:*"
-    }
-  }
-
-  # Additional policies
-  attach_policy_jsons    = true
-  number_of_policy_jsons = 2
-  policy_jsons       = [
-    local.dispatcher_sns_policy,
-    local.dispatcher_appconfig_policy
-  ]
-
-  environment_variables = {
-    SNS_TOPIC_ARN = aws_sns_topic.scan[0].arn
-    APPCONFIG_APP = "${var.app_env}-${var.app_name}-appconfig"
-    APPCONFIG_ENV = var.app_env
-  }
-
-  tags = var.tags
-
-  depends_on = [aws_sns_topic.scan, module.ecr_dispatcher]
+  notifier_ams_secret_name  = length(aws_secretsmanager_secret.s3av) > 0 ? aws_secretsmanager_secret.s3av[0].name : ""
 }
 
 #====================================================
@@ -78,19 +23,18 @@ module "lambda_scanner" {
   source = "terraform-aws-modules/lambda/aws"
   # version = "1.28.0"
 
-  create = var.lambda_scanner_enabled
+  create = var.scanner_enabled
 
   function_name = "${var.app_env}-${var.app_name}-scanner"
   description   = "AWS S3 Virus Scanner"
 
-  memory_size                             = 2048
+  memory_size                             = 512
   timeout                                 = 90
   create_current_version_allowed_triggers = false
-  reserved_concurrent_executions          = 20
 
   # Container image settings
   create_package = false
-  image_uri      = "${module.ecr_scanner.repository_url}:${var.lambda_scanner_image_tag}"
+  image_uri      = "${module.ecr_scanner.repository_url}:${local.scanner_img_version}"
   package_type   = "Image"
 
   # Creating Lambda inside VPC
@@ -110,9 +54,9 @@ module "lambda_scanner" {
 
   # Lambda triggers
   allowed_triggers = {
-    CloudTrailLogs = {
-      service    = "sns"
-      source_arn = aws_sns_topic.scan[0].arn
+    S3ObjectUpload = {
+      service    = "s3"
+      source_arn = module.s3_bucket.s3_bucket_arn
     },
     UpdateClamAVDatabase = {
       service    = "events"
@@ -129,7 +73,7 @@ module "lambda_scanner" {
 
   tags = var.tags
 
-  depends_on = [module.ecr_scanner]
+  depends_on = [module.ecr_scanner, module.s3_bucket]
 }
 
 
@@ -140,17 +84,18 @@ module "lambda_notifier" {
   source = "terraform-aws-modules/lambda/aws"
   # version = "1.28.0"
 
-  create = var.lambda_notifier_enabled
+  create = var.notifier_enabled
 
   function_name = "${var.app_env}-${var.app_name}-notifier"
   description   = "AWS S3 Virus Scanner - Slack Notification"
 
+  memory_size                             = 512
   timeout                                 = 10
   create_current_version_allowed_triggers = false
 
   # Container image settings
   create_package = false
-  image_uri      = "${module.ecr_notifier.repository_url}:${var.lambda_notifier_image_tag}"
+  image_uri      = "${module.ecr_notifier.repository_url}:${local.notifier_img_version}"
   package_type   = "Image"
 
 
@@ -161,7 +106,7 @@ module "lambda_notifier" {
 
   # Additional policies
   attach_policy_jsons    = true
-  number_of_policy_jsons = 2
+  number_of_policy_jsons = 3
   policy_jsons = [
     local.notifier_asm_policy,
     local.notifier_kms_policy,

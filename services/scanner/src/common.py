@@ -80,6 +80,7 @@ def get_boto_session(account_id, region_name=None):
 
     return BOTO_SESSIONS[cache_key]
 
+
 def get_appconfig():
     logging.info('Fetching application configs from local AppConfig extension')
     try:

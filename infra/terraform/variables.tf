@@ -2,39 +2,6 @@
 # General
 #====================================================
 
-variable "lambda_scanner_enabled" {
-    description = "Whether to deploy scanner lambda"
-    type = bool
-    default = false
-}
-
-variable "lambda_notifier_enabled" {
-    description = "Whether to deploy notifier lambda"
-    type = bool
-    default = false
-}
-
-variable "lambda_dispatcher_enabled" {
-    description = "Whether to deploy dispatcher lambda"
-    type = bool
-    default = false
-}
-
-variable "lambda_scanner_image_tag" {
-    description = "Container image tag for Virus Scanner Lambda source code"
-    type        = string
-}
-
-variable "lambda_dispatcher_image_tag" {
-    description = "Container image tag for Events Dispatcher Lambda source code"
-    type        = string
-}
-
-variable "lambda_notifier_image_tag" {
-    description = "Container image tag for Slack notification Lambda source code"
-    type        = string
-}
-
 variable "app_env" {
     description = "Application Environment"
     type        = string
@@ -63,6 +30,48 @@ variable "aws_region" {
     type        = string
     default     = "us-east-1"
 }
+
+#====================================================
+# Lambda
+#====================================================
+
+variable "scanner_version_file_path" {
+    description = "Container image tag for Virus Scanner Lambda source code"
+    type        = string
+    default     = "../../services/scanner/version.json"
+}
+
+variable "scanner_enabled" {
+    description = "Whether to deploy scanner lambda"
+    type        = bool
+    default     = true
+}
+
+variable "notifier_version_file_path" {
+    description = "Container image tag for Slack notification Lambda source code"
+    type        = string
+    default     = "../../services/notifier/version.json"
+}
+
+variable "notifier_enabled" {
+    description = "Whether to deploy notifier lambda"
+    type        = bool
+    default     = true
+}
+
+#====================================================
+# S3
+#====================================================
+
+variable "s3_scan_bucket_name" {
+  description = "Name of S3 bucket/s to be montiored for upload events"
+  type        = string
+  default     = ""
+}
+
+#====================================================
+# VPC
+#====================================================
 
 variable "vpc_private_subnets" {
     description = "AWS vpc private subnet where the scanner lambdas will be attached to"
@@ -108,35 +117,41 @@ variable "vpc_create" {
     default     = true
 }
 
+#====================================================
+# ECR
+#====================================================
+
 variable "ecr_max_image_count" {
     type        = number
     description = "How many Docker Image versions AWS ECR will store"
     default     = 20
 }
 
-variable "cloudtrail_log_group_name" {
-    type        = string
-    description = "CloudTrail log group name in CloudWatch"
-    default     = ""
-}
+#====================================================
+# Cloud Watch
+#====================================================
 
-variable "cloudtrail_log_filter_pattern" {
-    type        = string
-    description = "CloudTrail log group name in CloudWatch"
-    default     = ""
-}
-
-variable "update_clamav_db_schedule_expression" {
+variable "cw_update_clamav_db_sched_expression" {
     type        = string
     description = "Schedule expression config for ClamAV database updater"
     default     = "rate(1 day)"
 }
+
+#====================================================
+# Appconfig
+#====================================================
 
 variable "appconfig_hosted_config" {
   description = "Whether to enabled hosted config (as opposed to s3 or param store hosted)"
   type        = bool
   default     = true
 }
+
+variable "appconfig_hosted_config_env" {
+  description = "Appconfig environment"
+  type        = map(any)
+}
+
 
 variable "appconfig_hosted_config_content_type" {
   description = "Format of the config"

@@ -43,7 +43,7 @@ class ScanFilterConfig(object):
         """
         
         scope = self.config['scan_scope']
-        bucket_scope = scope['accounts'][account_id]['buckets']
+        bucket_scope = scope['enabled_accounts'][account_id]['buckets']
 
         if bucket not in bucket_scope:
             # Empty account in configs means all accounts
@@ -132,8 +132,7 @@ class ScanResult(object):
 class S3VirusScanner(object):
     """S3VirusScanner scans an s3 file for viruses
 
-    This object encapsulates ClamAV functionality to perform virus scans on a target file recently
-    uploaded into an s3 bucket.
+    This object encapsulates ClamAV functionality to perform virus scans on a target s3 file object.
     """
 
     def __init__(self) -> None:
@@ -144,17 +143,11 @@ class S3VirusScanner(object):
         self._scan_results = None
 
     def create_data_dir(self):
-        """Creates the data directory on attached EFS where ClamAV virus definition db and files to-be-scanned are stored
+        """Creates the data directory where ClamAV virus definition db and files to-be-scanned are stored
 
         Raises:
-            Exception: If EFS mount point doesn't exist
             OSError: If unable to create ClamAv data dir
         """
-
-        if not os.path.exists(config.PATH_EFS):
-            msg = f'{config.PATH_EFS} dir doesn\'t exits. Make sure EFS is correctly connected to Lambda'
-            logger.error(msg)
-            raise Exception(msg)
 
         if not os.path.exists(config.VS_PATH_DB):
             try:
@@ -220,10 +213,10 @@ class S3VirusScanner(object):
             event (json): SNS message event payload [see https://docs.aws.amazon.com/lambda/latest/dg/with-sns.html]
         """
 
-        # We should have only 1 record inside SNS event
+        # We should have only 1 record inside S3 event
         assert len(event['Records']) == 1
 
-        assert event['Records'][0]['EventSource'] == 'aws:sns'
+        assert event['Records'][0]['EventSource'] == 'aws:s3'
 
         sns_msg = json.loads(event['Records'][0]['Sns']['Message'])
 
