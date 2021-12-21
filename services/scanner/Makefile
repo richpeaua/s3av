@@ -67,7 +67,7 @@ build: env-verify ## Build docker image
 	docker tag ${IMAGE} ${IMAGE_LATEST}
 
 .PHONY: push
-push: ## Push docker image
+push: ecr-login ## Push docker image
 	docker push ${IMAGE}
 
 .PHONY: deploy

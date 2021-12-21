@@ -1,0 +1,10 @@
+{
+    "results_sns_routes": [
+        {   
+            "accounts": "147649018957",
+            "buckets": ["dev-s3av-scan-test-bucket"],
+            "finding": "ALL",
+            "dest_sns_arn": "arn:aws:sns:us-west-1:147649018957:dev-s3av-notification"
+        }
+    ]
+}

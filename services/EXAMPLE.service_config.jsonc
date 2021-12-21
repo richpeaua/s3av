@@ -1,0 +1,22 @@
+// This is only an example config file!
+
+{
+    "results_sns_routes": [
+        {   
+            "accounts": "123456789876",
+            "buckets": ["dev-s3av-scan-test-bucket"],
+            "finding": "ALL",
+            "dest_sns_arn": "arn:aws:sns:us-east-1:123456789876:dev-s3av-notification"
+        }
+    ],
+    "scan_scope": {
+        "enabled_buckets": {
+            "dev-s3av-scan-test-bucket": {
+                "owner_account_id": "123456789876"
+            }
+        }
+    },
+    "aws_accounts": {
+        "123456789876": "main"
+    }
+}

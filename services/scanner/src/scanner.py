@@ -9,7 +9,7 @@ from glob import glob
 
 from botocore.client import Config as boto_config
 
-from common import timestamp_now, get_boto_session, get_appconfig
+from common import timestamp_now, get_boto_session, read_service_config
 from configs import config
 from s3 import S3File
 from notify import get_sns_topics
@@ -33,7 +33,7 @@ class ScanFilterConfig(object):
         self.config = config
 
     def is_match(self, account_id, bucket):
-        """Checks whether an AWS account or S3 bucket name exist within the 'scan_scope' config
+        """Checks whether an S3 bucket name exists within the 'scan_scope' config
 
         Args:
             account_id (str): AWS account id
@@ -43,10 +43,9 @@ class ScanFilterConfig(object):
         """
         
         scope = self.config['scan_scope']
-        bucket_scope = scope['enabled_accounts'][account_id]['buckets']
+        bucket_scope = scope['enabled_buckets']
 
-        if bucket not in bucket_scope:
-            # Empty account in configs means all accounts
+        if not bucket_scope.get(bucket):
             logger.info(f'AWS S3 Bucket not in scope: {bucket}.')
             return False
 
@@ -56,8 +55,7 @@ class ScanFilterConfig(object):
 class ScanResult(object):
     """ScanResult object for parsing virus scan results
 
-    This object merges S3File object data with virus scan results. Includes functionality to return
-    the updated merged data for further processing according to the added post-scan results.
+    This object wraps S3File object data with virus scan results and can return them
 
     Args:
         cli_stdout (str): string (utf-8 encoded) formatted stdout returned from clamscan command run via subprocess.run() function.
@@ -69,13 +67,13 @@ class ScanResult(object):
         self._results = {}
         self.s3_obj = s3_obj
         self.load_from_cli_stdout(cli_stdout)
-        self.timestap = timestamp_now()
+        self.scan_timestamp = timestamp_now()
 
     def load_from_cli_stdout(self, cli_stdout):
         """Parses the cli_stdout string for keys/values and loads them into a dict
 
         Args:
-            cli_stdout (str): string (utf-8 encoded) formatted stdout returned from clamscan command run via subprocess.run() function.
+            cli_stdout (str): string (utf-8 encoded) formatted stdout returned from clamscan command.
         """
 
         for line in cli_stdout.split('\n'):
@@ -206,33 +204,34 @@ class S3VirusScanner(object):
 
 
     def load_from_event_data(self, event):
-        """Pulls the target s3 file object to scan from an SNS message and then instantiates
+        """Pulls the target s3 file object to scan from an S3 upload event and then instantiates
         an S3File object mapped to target file object for further scanning and processing
 
         Args:
-            event (json): SNS message event payload [see https://docs.aws.amazon.com/lambda/latest/dg/with-sns.html]
+            event (json): S3 upload event payload [see https://docs.aws.amazon.com/AmazonS3/latest/userguide/notification-content-structure.html]
         """
 
         # We should have only 1 record inside S3 event
         assert len(event['Records']) == 1
 
-        assert event['Records'][0]['EventSource'] == 'aws:s3'
+        assert event['Records'][0]['eventSource'] == 'aws:s3'
 
-        sns_msg = json.loads(event['Records'][0]['Sns']['Message'])
+        s3_upload_event = event['Records'][0]
 
-        self._s3_file = S3File(sns_msg)
+        self._s3_file = S3File(s3_upload_event)
 
     def should_scan(self):
-        """Checks whether bucket name/owning AWS account in SNS event message are in scanning scope, according to buckets/accounts ennumerated in app configs.
+        """Checks whether bucket name/owning AWS account in S3 object upload event are in scanning scope, 
+        as set in service config
 
         Returns:
-            boolean: True if bucket/target file are within scanning scope, as enumerated in scan_config.json config file, else False
+            boolean: True if bucket/target file are within scanning scope
         """
 
-        app_config = get_appconfig()
-        scan_config = ScanFilterConfig(app_config)
+        srvc_config = read_service_config(config_path=config.PATH_SRVC_CONFIG)
+        scan_filter = ScanFilterConfig(srvc_config)
 
-        return scan_config.is_match(self._s3_file.aws_account, self._s3_file.bucket)
+        return scan_filter.is_match(self._s3_file.aws_account, self._s3_file.bucket)
 
     def scan(self):
         """Runs clamscan virus scan on downloaded S3 file and then returns scan results.
@@ -339,6 +338,6 @@ class S3VirusScanner(object):
         logger.info('Published to SNS topics', extra=scan_results)
 
     def cleanup(self):
-        """Clean up downloaded and scanned S3 file on the attached EFS in preparation for next scan"""
+        """Clean up downloaded and scanned S3 file"""
 
         self._s3_file.cleanup()

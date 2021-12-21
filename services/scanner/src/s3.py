@@ -9,7 +9,7 @@ from pathlib import Path
 from botocore.client import Config as Config_boto3
 
 from configs import config
-from common import get_boto_session
+from common import get_boto_session, read_service_config
 
 logger = logging.getLogger()
 
@@ -17,17 +17,18 @@ logger = logging.getLogger()
 class S3File(object):
     """S3File object represents a file stored within an S3 bucket
 
-    This object parses an SNS message of an S3 push event that contains, among other items, a filename 
+    This object parses a S3 push event that contains, among other items, a filename 
     and the S3 bucket in which the file resides and then maps itself to said file for further handling and processing.
 
     Args:
-        event_data (json): SNS message of an S3 push event
+        event_data (json): S3 push event
     """
 
     def __init__(self, event_data) -> None:
         super().__init__()
 
-        self._event_data = event_data
+        self._event_data_full = event_data
+        self._event_data_s3 = event_data['s3']
         self._s3_resource = None
         self._s3_object = None
         self._s3_object_tags = None
@@ -37,26 +38,26 @@ class S3File(object):
     def key(self):
         """`str`: S3 object key/path"""
 
-        # AWS replace spaces with plus sign in S3 Event Records
-        return urllib.parse.unquote_plus(self._event_data['key'], encoding='utf-8')
+        # AWS replaces spaces with plus sign in S3 Event Records
+        return urllib.parse.unquote_plus(self._event_data_s3['object']['key'], encoding='utf-8')
 
     @property
     def bucket(self):
         """`str`: S3 bucket name"""
 
-        return self._event_data['bucket']
+        return self._event_data_s3['bucket']['name']
 
     @property
     def aws_account(self):
         """`str`: AWS account owning the S3 bucket"""
-
-        return self._event_data['account']
+        srvc_config = read_service_config(config.PATH_SRVC_CONFIG)
+        return srvc_config['scan_scope']['enabled_buckets'][self.bucket]['owner_account_id']
 
     @property
     def region(self):
         """`str`: AWS region where S3 bucket lives"""
 
-        return self._event_data['region']
+        return self._event_data_full['awsRegion']
 
     @property
     def size(self):
@@ -65,16 +66,10 @@ class S3File(object):
         return self.s3_obj.content_length
 
     @property
-    def event_id(self):
-        """`str`: SNS message event id"""
-
-        return self._event_data['event_id']
-
-    @property
     def event_time(self):
         """`str`: ISO formatted timestamp of when the S3 push event was published"""
 
-        return self._event_data['time']
+        return self._event_data_full['eventTime']
 
     @property
     def s3_resource(self):
@@ -131,7 +126,6 @@ class S3File(object):
 
         # Default variables to include in log messages
         return {
-            'event_id': self.event_id,
             'account': self.aws_account,
             'bucket': self.bucket,
             'key': self.key,

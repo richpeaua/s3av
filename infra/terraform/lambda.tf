@@ -38,9 +38,9 @@ module "lambda_scanner" {
   package_type   = "Image"
 
   # Creating Lambda inside VPC
-  vpc_subnet_ids         = module.vpc.private_subnets
-  vpc_security_group_ids = [aws_security_group.lambda_scanner[0].id]
-  attach_network_policy  = true
+  # vpc_subnet_ids         = module.vpc.private_subnets
+  # vpc_security_group_ids = [aws_security_group.lambda_scanner[0].id]
+  # attach_network_policy  = true
 
   # Additional policies
   attach_policy_jsons    = true
@@ -100,9 +100,9 @@ module "lambda_notifier" {
 
 
   # Creating Lambda inside VPC
-  vpc_subnet_ids         = module.vpc.private_subnets
-  vpc_security_group_ids = [aws_security_group.lambda_scanner[0].id]
-  attach_network_policy  = true
+  # vpc_subnet_ids         = module.vpc.private_subnets
+  # vpc_security_group_ids = [aws_security_group.lambda_scanner[0].id]
+  # attach_network_policy  = true
 
   # Additional policies
   attach_policy_jsons    = true

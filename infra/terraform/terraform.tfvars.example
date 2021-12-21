@@ -1,15 +1,15 @@
-### THIS IS AN EXAMPLE .tfvars FILE!
-
 # AWS vars
-aws_account_id  = "12345678987"
+aws_account_id  = "123456789876"
 aws_region      = "us-east-1"
+app_env         = "dev"
 # Common Vars
-env      = "dev"
 tags     = {
     TerraformManaged = "true"
     Environment      = "dev"
     App              = "s3av"
 }
+# Scannable S3 bucket Vars
+s3_scan_bucket_name = "scan-test-bucket"
 # Lambda Vars
 scanner_enabled            = true
 scanner_version_file_path  = "../../services/scanner/version.json"
@@ -19,8 +19,8 @@ notifier_version_file_path = "../../services/notifier/version.json"
 appconfig_hosted_config_content_path = "../../services/service_config.json"
 appconfig_hosted_config_env = {
     dev = {
-        name        = "Dev"
-        description = "Dev s3av service configs"
+        name        = "dev"
+        description = "dev s3av service configs"
     }
 }
 # VPC Vars

@@ -9,7 +9,7 @@ resource "aws_security_group" "lambda_scanner" {
     from_port   = 0
     to_port     = 65535
     protocol    = "tcp"
-    cidr_blocks = module.vpc.private_subnets_cidr_blocks
+    cidr_blocks = [module.vpc.vpc_cidr_block]
   }
 
   egress {

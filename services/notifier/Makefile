@@ -63,14 +63,14 @@ lock:
 	pipenv lock -r > requirements.txt
 
 .PHONY: build
-build: env-verify lock ecr-login ## Build docker image
+build: env-verify ## Build docker image
 	@stat build_resources || mkdir build_resources
 	@stat build_resources/layer.zip || curl "$(shell aws --profile ${AWS_PROFILE} --region ${AWS_DEFAULT_REGION} lambda get-layer-version-by-arn --arn ${APPCONFIG_EXT_ARN} --query 'Content.Location' --output text)" --output build_resources/layer.zip
 	docker build --no-cache --rm --force-rm -t ${IMAGE} .
 	docker tag ${IMAGE} ${IMAGE_LATEST}
 
 .PHONY: push
-push: ## Push docker image
+push: ecr-login ## Push docker image
 	docker push ${IMAGE}
 
 .PHONY: deploy

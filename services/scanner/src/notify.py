@@ -1,4 +1,5 @@
-from common import get_appconfig
+from common import read_service_config
+from configs import config
 
 
 class SNSConfig(object):
@@ -23,8 +24,8 @@ class SNSConfig(object):
 
 
 def get_sns_configs():
-    app_config = get_appconfig()
-    notify_config = app_config['results_sns_routes']
+    srvc_config = read_service_config(config.PATH_SRVC_CONFIG)
+    notify_config = srvc_config['results_sns_routes']
     for sns_raw_config in notify_config:
         yield SNSConfig(sns_raw_config)
 

@@ -29,10 +29,7 @@ class Config(object):
     VS_S3_OBJ_TAG_SIGNATURE = 'S3AVVirusSignature'
     VS_S3_OBJ_TAG_TIMESTAMP = 'S3AVScanTimestamp'
 
-    # AppConfig
-    APPCONFIG_APP_NAME = environ.get('APPCONFIG_APP')
-    APPCONFIG_ENV = environ.get('APPCONFIG_ENV')
-    APPCONFIG_EXT_URL = f'http://localhost:2772/applications/{APPCONFIG_APP_NAME}/environments/{APPCONFIG_ENV}/configurations/{APPCONFIG_APP_NAME}'
-
+    # Service Confg
+    PATH_SRVC_CONFIG = environ.get('PATH_SRVC_CONFIG', './service_config.json')
 
 config = Config()

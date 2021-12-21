@@ -2,7 +2,7 @@ from datetime import datetime
 import json
 import logging
 import traceback
-import urllib.request
+import os
 
 import boto3
 
@@ -81,15 +81,20 @@ def get_boto_session(account_id, region_name=None):
     return BOTO_SESSIONS[cache_key]
 
 
-def get_appconfig():
-    logging.info('Fetching application configs from local AppConfig extension')
-    try:
-        config_request = urllib.request.urlopen(config.APPCONFIG_EXT_URL)
-    except Exception as err:
-        logging.error('Could not fetch configs from Appconfig, check lambda IAM policy')
-        logging.error(err)
-        raise err
+def read_service_config(config_path=""):
+    """Read service config file
 
-    logging.info('Application configs fetched successfully')
-    app_config = json.loads(config_request.read())
-    return app_config
+    Returns:
+        dict: service config pulled from local config file
+    """
+    config_path = os.path.abspath(config_path)
+
+    logging.info(f'Reading service config file: `{config_path}`')
+    try:
+        srvc_config = json.loads(open(config_path).read())
+    except Exception as err:
+        logging.error(f'Could not find or read {config_path} file')
+        raise err
+    
+    logging.info('Service configs found')
+    return srvc_config
